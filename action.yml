@@ -1,0 +1,73 @@
+name: 'Execute Dotnet Test'
+author: DevOps
+description: 'Run dotnet test.'
+
+inputs:
+  # AWS Authentication
+  aws-access-key-id:
+    description: 'AWS Access Key ID to authenticate for deploying to ECR and the desired EKS cluster.'
+    required: true
+  aws-secret-access-key:
+    description: 'AWS Secret Access Key to authenticate for deploying to ECR and the desired EKS cluster.'
+    required: true
+  aws-region:
+    description: 'Region used for ECR login.'
+    required: false
+    default: 'us-east-1'
+  # Dotnet Configuration
+  solution-file:
+    description: 'Dotnet Solution file to run against.'
+    required: true
+  filter:
+    description: 'Dotnet filter to use. Typically UnitTests or IntegrationTests'
+    required: true
+  configuration:
+    description: 'Dotnet configuration to use. Default is "Release".'
+    required: false
+    default: 'Release'
+  aspnetcore-environment:
+    description: 'Dotnet aspnet configuration to use. Default is "BranchDevelopment".'
+    required: false
+    default: 'BranchDevelopment'
+  dotnet-environment:
+    description: 'Dotnet environment configuration to use. Default is "BranchDevelopment".'
+    required: false
+    default: 'BranchDevelopment'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Authenticate with AWS
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+        aws-region: ${{ inputs.aws-region }}
+        
+    - name: Extract branch name
+      id: extract_branch
+      shell: bash
+      run: |
+        export UNESCAPED_BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        echo "branch=$(echo ${UNESCAPED_BRANCH_NAME})" >> $GITHUB_OUTPUT
+        echo "clean-branch=$(echo ${UNESCAPED_BRANCH_NAME} | sed 's/_//g' | tr '[:upper:]' '[:lower:]' | cut -c -38)" >> $GITHUB_OUTPUT
+    
+    - name: Copy NuGet Config
+      shell: bash
+      run: cp /home/runner/.nuget/NuGet/NuGet.Config ./nuget.config
+
+    - name: Restore Dependencies
+      shell: bash
+      run: dotnet restore ${{ inputs.solution-file }}
+
+    - name: Run Dotnet Tests
+      shell: bash
+      env:
+        BRANCH_NAME: ${{ steps.extract_branch.outputs.branch }}
+        BRANCH_DATABASE: ${{ steps.extract_branch.outputs.branch }}
+        ASPNETCORE_ENVIRONMENT: ${{ inputs.aspnetcore-environment }}
+        DOTNET_ENVIRONMENT: ${{ inputs.dotnet-environment }}
+      run: dotnet test ${{ inputs.solution-file }} --configuration ${{ inputs.configuration }} --filter ${{ inputs.filter }}
