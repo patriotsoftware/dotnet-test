@@ -21,6 +21,9 @@ inputs:
   filter:
     description: 'Dotnet filter to use. Typically UnitTests or IntegrationTests'
     required: true
+  logger:
+    description: 'Dotnet logger configuration to use.'
+    required: false
   configuration:
     description: 'Dotnet configuration to use. Default is "Release".'
     required: false
@@ -33,6 +36,26 @@ inputs:
     description: 'Dotnet environment configuration to use. Default is "BranchDevelopment".'
     required: false
     default: 'BranchDevelopment'
+  run-test-report:
+    description: 'Run Dotnet Test Reports.'
+    required: false
+    default: 'false'
+  test-report-name:
+    description: 'Run Dotnet Test Reports.'
+    required: false
+    default: 'false'
+  test-report-path:
+    description: 'Run Dotnet Test Reports.'
+    required: false
+    default: 'false'
+  test-report-reporter:
+    description: 'Run Dotnet Test Reports.'
+    required: false
+    default: 'false'
+  test-report-fail-on-error:
+    description: 'Run Dotnet Test Reports.'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -70,4 +93,13 @@ runs:
         BRANCH_DATABASE: ${{ steps.extract_branch.outputs.branch }}
         ASPNETCORE_ENVIRONMENT: ${{ inputs.aspnetcore-environment }}
         DOTNET_ENVIRONMENT: ${{ inputs.dotnet-environment }}
-      run: dotnet test ${{ inputs.solution-file }} --configuration ${{ inputs.configuration }} --filter ${{ inputs.filter }}
+      run: dotnet test ${{ inputs.solution-file }} --configuration ${{ inputs.configuration }} --filter ${{ inputs.filter }} --logger ${{ inputs.logger }}
+
+    - name: Test Report
+      if: ${{ inputs.run-test-report == 'true' }}
+      uses: dorny/test-reporter@v1
+      with:
+        name: ${{ inputs.test-report-name }}
+        path: ${{ inputs.test-report-path }}
+        reporter: ${{ inputs.test-report-reporter }}
+        fail-on-error: ${{ inputs.test-report-fail-on-error }}
