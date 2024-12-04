@@ -93,7 +93,13 @@ runs:
         BRANCH_DATABASE: ${{ steps.extract_branch.outputs.branch }}
         ASPNETCORE_ENVIRONMENT: ${{ inputs.aspnetcore-environment }}
         DOTNET_ENVIRONMENT: ${{ inputs.dotnet-environment }}
-      run: dotnet test ${{ inputs.solution-file }} --configuration ${{ inputs.configuration }} --filter ${{ inputs.filter }} --logger ${{ inputs.logger }}
+      run: |
+        if [[ "${{ inputs.logger }}" != "" ]]; then
+          LOGGER="--logger ${{ inputs.logger }}"
+        else
+          LOGGER=""
+        fi
+        dotnet test ${{ inputs.solution-file }} --configuration ${{ inputs.configuration }} --filter ${{ inputs.filter }} $LOGGER
 
     - name: Test Report
       if: ${{ inputs.run-test-report == 'true' }}
