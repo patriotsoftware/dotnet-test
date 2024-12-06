@@ -50,19 +50,19 @@ inputs:
     required: false
     default: 'false'
   test-report-name:
-    description: 'Run Dotnet Test Reports.'
+    description: 'Dotnet Test Name.'
     required: false
     default: 'false'
   test-report-path:
-    description: 'Run Dotnet Test Reports.'
+    description: 'Dotnet Test Path.'
     required: false
     default: 'false'
   test-report-reporter:
-    description: 'Run Dotnet Test Reports.'
+    description: 'Dotnet Test Reporter.'
     required: false
     default: 'false'
   test-report-fail-on-error:
-    description: 'Run Dotnet Test Reports.'
+    description: 'Dotnet Test Fail on Error.'
     required: false
     default: 'false'
 
