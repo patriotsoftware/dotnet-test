@@ -21,8 +21,17 @@ inputs:
   filter:
     description: 'Dotnet filter to use. Typically UnitTests or IntegrationTests'
     required: true
-  logger:
-    description: 'Dotnet logger configuration to use.'
+  dotnet-test-logger:
+    description: 'Dotnet logger flag.'
+    required: false
+  dotnet-test-verbosity:
+    description: 'Dotnet verbosity flag.'
+    required: false
+  dotnet-test-environment:
+    description: 'Dotnet environment flag.'
+    required: false
+  dotnet-test-settings:
+    description: 'Dotnet settings flag.'
     required: false
   configuration:
     description: 'Dotnet configuration to use. Default is "Release".'
@@ -94,12 +103,29 @@ runs:
         ASPNETCORE_ENVIRONMENT: ${{ inputs.aspnetcore-environment }}
         DOTNET_ENVIRONMENT: ${{ inputs.dotnet-environment }}
       run: |
-        if [[ "${{ inputs.logger }}" != "" ]]; then
-          LOGGER="--logger ${{ inputs.logger }}"
+        # Set optional variables
+        if [[ "${{ inputs.dotnet-test-logger }}" != "" ]]; then
+          LOGGER=" --logger ${{ inputs.dotnet-test-logger }}"
         else
           LOGGER=""
         fi
-        dotnet test ${{ inputs.solution-file }} --configuration ${{ inputs.configuration }} --filter ${{ inputs.filter }} $LOGGER
+        if [[ "${{ inputs.dotnet-test-environment }}" != "" ]]; then
+          DOTNET_TEST_ENVIRONMENT=" --environment ${{ inputs.environment }}"
+        else
+          DOTNET_TEST_ENVIRONMENT=""
+        fi
+        if [[ "${{ inputs.dotnet-test-verbosity }}" != "" ]]; then
+          VERBOSITY=" --verbosity ${{ inputs.verbosity }}"
+        else
+          VERBOSITY=""
+        fi
+        if [[ "${{ inputs.dotnet-test-settings }}" != "" ]]; then
+          SETTINGS=" --settings ${{ inputs.dotnet-test-settings }}"
+        else
+          SETTINGS=""
+        fi
+        dotnet test ${{ inputs.solution-file }} --configuration ${{ inputs.configuration }} --filter ${{ inputs.filter }}$LOGGER$DOTNET_TEST_ENVIRONMENT$VERBOSITY$SETTINGS
+#                                                                                                                        ^ From this point, it will append any additional flags that have been entered by the user.
 
     - name: Test Report
       if: ${{ inputs.run-test-report == 'true' }}
