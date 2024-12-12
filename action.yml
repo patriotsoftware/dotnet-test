@@ -21,6 +21,18 @@ inputs:
   filter:
     description: 'Dotnet filter to use. Typically UnitTests or IntegrationTests'
     required: true
+  dotnet-test-logger:
+    description: 'Dotnet logger flag.'
+    required: false
+  dotnet-test-verbosity:
+    description: 'Dotnet verbosity flag.'
+    required: false
+  dotnet-test-environment:
+    description: 'Dotnet environment flag.'
+    required: false
+  dotnet-test-settings:
+    description: 'Dotnet settings flag.'
+    required: false
   configuration:
     description: 'Dotnet configuration to use. Default is "Release".'
     required: false
@@ -33,13 +45,30 @@ inputs:
     description: 'Dotnet environment configuration to use. Default is "BranchDevelopment".'
     required: false
     default: 'BranchDevelopment'
+  run-test-report:
+    description: 'Run Dotnet Test Reports.'
+    required: false
+    default: 'false'
+  test-report-name:
+    description: 'Dotnet Test Name.'
+    required: false
+    default: 'false'
+  test-report-path:
+    description: 'Dotnet Test Path.'
+    required: false
+    default: 'false'
+  test-report-reporter:
+    description: 'Dotnet Test Reporter.'
+    required: false
+    default: 'false'
+  test-report-fail-on-error:
+    description: 'Dotnet Test Fail on Error.'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
   steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
     - name: Authenticate with AWS
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -70,4 +99,36 @@ runs:
         BRANCH_DATABASE: ${{ steps.extract_branch.outputs.branch }}
         ASPNETCORE_ENVIRONMENT: ${{ inputs.aspnetcore-environment }}
         DOTNET_ENVIRONMENT: ${{ inputs.dotnet-environment }}
-      run: dotnet test ${{ inputs.solution-file }} --configuration ${{ inputs.configuration }} --filter ${{ inputs.filter }}
+      run: |
+        # Set optional variables
+        if [[ "${{ inputs.dotnet-test-logger }}" != "" ]]; then
+          LOGGER=" --logger ${{ inputs.dotnet-test-logger }}"
+        else
+          LOGGER=""
+        fi
+        if [[ "${{ inputs.dotnet-test-environment }}" != "" ]]; then
+          DOTNET_TEST_ENVIRONMENT=" --environment ${{ inputs.environment }}"
+        else
+          DOTNET_TEST_ENVIRONMENT=""
+        fi
+        if [[ "${{ inputs.dotnet-test-verbosity }}" != "" ]]; then
+          VERBOSITY=" --verbosity ${{ inputs.verbosity }}"
+        else
+          VERBOSITY=""
+        fi
+        if [[ "${{ inputs.dotnet-test-settings }}" != "" ]]; then
+          SETTINGS=" --settings ${{ inputs.dotnet-test-settings }}"
+        else
+          SETTINGS=""
+        fi
+        dotnet test ${{ inputs.solution-file }} --configuration ${{ inputs.configuration }} --filter ${{ inputs.filter }}$LOGGER$DOTNET_TEST_ENVIRONMENT$VERBOSITY$SETTINGS
+#                                                                                                                        ^ From this point, it will append any additional flags that have been entered by the user.
+
+    - name: Test Report
+      if: ${{ inputs.run-test-report == 'true' }}
+      uses: dorny/test-reporter@v1
+      with:
+        name: ${{ inputs.test-report-name }}
+        path: ${{ inputs.test-report-path }}
+        reporter: ${{ inputs.test-report-reporter }}
+        fail-on-error: ${{ inputs.test-report-fail-on-error }}
